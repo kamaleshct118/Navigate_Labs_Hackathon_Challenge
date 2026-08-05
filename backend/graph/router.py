@@ -81,6 +81,10 @@ class ComplianceQueryRouter:
                 params["department"] = dept
                 break
 
+        # Detect comparison intent
+        if any(w in q_lower for w in ["difference", "compare", "versus", "vs", "between", "what changed", "old vs new"]):
+            params["is_comparison"] = True
+
         return params
 
     @staticmethod
@@ -144,7 +148,7 @@ class ComplianceQueryRouter:
                 doc_ids.add(meta["doc_id"])
 
         # If user explicitly asked for a comparison or provided multi_regions, do NOT trigger CLARIFY conflict!
-        if "multi_regions" in params:
+        if "multi_regions" in params or "is_comparison" in params:
             return False, None
 
         if len(regions) > 1 and "region" not in params:
