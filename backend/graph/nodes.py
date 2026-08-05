@@ -127,32 +127,11 @@ def clarify_node(state: GraphState) -> GraphState:
     Asks targeted disambiguation questions when queries lack location context.
     """
     query = state["query"]
-    retrieved_docs = state.get("retrieved_docs", [])
-    contradiction = state.get("contradiction_reason")
     
-    conflict_details = []
-    if retrieved_docs:
-        for doc in retrieved_docs:
-            meta = doc.get("metadata", {})
-            region = meta.get("region", "Global")
-            summary_text = doc.get("matched_child_text", doc.get("content", "")[:120])
-            conflict_details.append(f"- 📍 **{region} Branch** (`{meta.get('doc_id')}`): {summary_text[:140]}...")
-
-    conflict_section = ""
-    if conflict_details:
-        conflict_section = "\n🔍 **Retrieved Conflicting Policy Variants**:\n" + "\n".join(conflict_details) + "\n"
-    elif contradiction:
-        conflict_section = f"\n⚠️ **Policy Conflict Detected**: {contradiction}\n"
-
     response = (
-        "📍 **Policy Disambiguation & Conflict Resolution Required**\n\n"
-        f"Your query *'{query}'* matches multiple regional policy standards within the enterprise.\n"
-        f"{conflict_section}\n"
-        "To get the exact binding policy rule, please specify your location:\n\n"
-        "- 🗽 **US - New York Branch** (`US-NY`)\n"
-        "- 🤠 **US - Austin Branch** (`US-Austin`)\n"
-        "- 🇬🇧 **EU - London Branch** (`EU-London`)\n\n"
-        "*(Note: The enterprise enforces location-specific compliance rules to maintain regional legal alignment.)*"
+        "📍 **Location Disambiguation Required**\n\n"
+        f"Your query *\"{query}\"* touches on compliance standards that vary by branch location (such as annual leave allowances, hybrid work rules, and stipends).\n\n"
+        "To provide the exact binding policy rule for your workplace, please select your office location below:"
     )
     
     return {
