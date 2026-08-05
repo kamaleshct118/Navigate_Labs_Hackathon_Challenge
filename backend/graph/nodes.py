@@ -190,24 +190,22 @@ def answer_direct_node(state: GraphState) -> GraphState:
 
     context_text = "\n\n".join(doc_contexts)
 
-    # Attempt Generative LLM Thinking & Synthesis via Gemini
+    # Dual-LLM Executive Synthesis
     system_prompt = (
-        "You are an expert Enterprise Compliance Assistant. Answer the user query using ONLY the provided policy document sections. "
-        "Strictly ground all facts in the provided text. Never hallucinate rules. "
-        "If comparing versions or branches, present a Comparative Policy Table first."
+        "You are an expert Enterprise Compliance Officer providing clear, helpful policy guidance to employees.\n"
+        "Rules for your response:\n"
+        "1. Write directly and professionally in user-friendly language. Address the employee directly.\n"
+        "2. Do NOT use robotic preamble like 'To answer the user query regarding...' or state internal steps.\n"
+        "3. Strictly base your answers ONLY on the provided policy documents. Do not invent rules.\n"
+        "4. Format key numbers, rules, allowances, or conditions using clean markdown bullet points.\n"
+        "5. Include a comparison table ONLY if the user explicitly asked to compare or contrast different branches or policy versions."
     )
     user_prompt = f"USER QUERY: {query}\n\nRETRIEVED POLICY CONTEXT:\n{context_text}"
     
     llm_synthesized = call_llm_synthesis(system_prompt, user_prompt)
     
     if llm_synthesized:
-        formatted_response = (
-            f"📋 **Official Enterprise Policy Response**\n\n"
-            f"{llm_synthesized}\n\n"
-            f"--- \n"
-            f"📌 **Verified Policy Citations**:\n"
-            + "\n".join([f"- {c}" for c in citations])
-        )
+        formatted_response = llm_synthesized
     else:
         # Grounded Template Fallback
         table_header = ""
