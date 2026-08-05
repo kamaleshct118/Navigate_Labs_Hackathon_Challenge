@@ -16,21 +16,17 @@ class CrossEncoderReRanker:
         self.model = None
         try:
             from sentence_transformers import CrossEncoder
-            print(f"[OK] Successfully initialized Cross-Encoder Re-Ranker: {model_name}")
+            self.model = CrossEncoder(model_name)
+            print(f"[OK] Pre-loaded Cross-Encoder Re-Ranker into memory: {model_name}")
         except Exception as e:
-            print(f"[NOTE] CrossEncoder '{model_name}' will load on first inference: {e}")
+            print(f"[NOTE] CrossEncoder initialization note: {e}")
 
     def rerank(self, query: str, candidates: List[Dict[str, Any]], top_n: int = 3) -> List[Dict[str, Any]]:
         if not candidates:
             return []
             
         if self.model is None:
-            try:
-                from sentence_transformers import CrossEncoder
-                self.model = CrossEncoder(self.model_name)
-            except Exception as e:
-                print(f"[NOTE] CrossEncoder unavailable, falling back to RRF ordering: {e}")
-                return candidates[:top_n]
+            return candidates[:top_n]
                 
         pairs = [[query, candidate["text"]] for candidate in candidates]
         scores = self.model.predict(pairs)

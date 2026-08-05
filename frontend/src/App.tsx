@@ -51,17 +51,17 @@ export default function App() {
 
   const { supported: speechSupported, speakingId, speak } = useSpeech();
 
-  // Hydrate from localStorage
+  // Hydrate from localStorage (refresh always initializes a fresh session & new chat)
   useEffect(() => {
     const persisted = loadState();
-    if (persisted && persisted.activeSessionId) {
+    const freshSessionId = genId();
+    if (persisted) {
       setConversations(persisted.conversations || []);
       setMessagesBySession(persisted.messagesBySession || {});
-      setActiveSessionId(persisted.activeSessionId);
+      setActiveSessionId(freshSessionId);
       setBranch(persisted.branch || 'Global');
     } else {
-      const id = genId();
-      setActiveSessionId(id);
+      setActiveSessionId(freshSessionId);
       setBranch('Global');
     }
   }, []);

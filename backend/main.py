@@ -106,6 +106,8 @@ def health_check():
     }
 
 
+import time
+
 @app.post("/api/chat", response_model=ChatResponse, summary="Process Enterprise Compliance Query")
 def process_compliance_query(request: ChatRequest):
     """
@@ -116,8 +118,15 @@ def process_compliance_query(request: ChatRequest):
     if not request.query or not request.query.strip():
         raise HTTPException(status_code=400, detail="Query string cannot be empty.")
         
+    start_time = time.time()
+    print("\n" + "=" * 60)
+    print(f"[API CHAT REQUEST] Session: {request.session_id} | Query: '{request.query}'")
+    print("=" * 60)
     try:
         final_state = run_compliance_agent(request.query, session_id=request.session_id)
+        elapsed = time.time() - start_time
+        print(f"[API CHAT COMPLETE] Intent: {final_state.get('intent')} | Citations: {len(final_state.get('citations', []))} | Finished in {elapsed:.2f}s")
+        print("=" * 60 + "\n")
         return ChatResponse(
             query=final_state["query"],
             session_id=request.session_id,
@@ -130,6 +139,7 @@ def process_compliance_query(request: ChatRequest):
             escalation_contact=final_state.get("escalation_contact")
         )
     except Exception as e:
+        print(f"[API CHAT ERROR] {e}")
         raise HTTPException(status_code=500, detail=f"Error executing agent pipeline: {str(e)}")
 
 

@@ -100,16 +100,21 @@ def router_node(state: GraphState) -> GraphState:
     params = ComplianceQueryRouter.extract_parameters(query)
     intent = ComplianceQueryRouter.classify_intent(query, params)
     
+    print(f"[STEP 1/3 Router] Intent Classified: '{intent}' | Filters Extracted: {params}")
+    
     retriever = get_retriever()
     retrieved_docs = []
     
     if intent in ["ANSWER_DIRECT", "CLARIFY"]:
+        print(f"[STEP 2/3 Retrieval] Executing Parallel BM25 + Vector Search + RRF + Cross-Encoder Re-Ranking...")
         retrieved_docs = retriever.retrieve_parents(query, metadata_filter=params if "multi_regions" not in params else None, top_n_parents=4)
+        print(f"   |-- Retrieved {len(retrieved_docs)} policy sections.")
 
     has_contradiction, contradiction_reason = ComplianceQueryRouter.detect_contradictions(retrieved_docs, params)
     
     if has_contradiction and "jurisdictions" in (contradiction_reason or ""):
         intent = "CLARIFY"
+        print(f"[ROUTER DETECT] Location ambiguity detected across regional policies -> Route to CLARIFY")
 
     return {
         **state,
@@ -127,6 +132,7 @@ def clarify_node(state: GraphState) -> GraphState:
     Asks targeted disambiguation questions when queries lack location context.
     """
     query = state["query"]
+    print(f"[STEP 3/3 Disambiguation] Presenting location buttons to user...")
     
     response = (
         "📍 **Location Disambiguation Required**\n\n"
@@ -191,6 +197,7 @@ def answer_direct_node(state: GraphState) -> GraphState:
     context_text = "\n\n".join(doc_contexts)
 
     # Dual-LLM Executive Synthesis
+    print(f"[STEP 3/3 Synthesis] Generating executive answer using {len(parents)} retrieved policy sections (Groq Llama-3.3-70b)...")
     system_prompt = (
         "You are an expert Enterprise Compliance Officer providing clear, helpful policy guidance to employees.\n"
         "Rules for your response:\n"
