@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, ShieldCheck, Activity, History, Trash2, ChevronDown } from 'lucide-react';
+import { Plus, ShieldCheck, Activity, History, Trash2, ChevronDown, Menu } from 'lucide-react';
 import type { Conversation } from '@/types';
 import { useHealth, type HealthState } from '@/hooks/useHealth';
 
@@ -18,6 +18,8 @@ interface SidebarProps {
   onSelectConversation: (id: string) => void;
   onSelectBranch: (branch: string) => void;
   onDeleteConversation: (id: string) => void;
+  isOpen: boolean;
+  onToggleSidebar: () => void;
 }
 
 function HealthDot({ state }: { state: HealthState }) {
@@ -88,6 +90,8 @@ export function Sidebar({
   onSelectConversation,
   onSelectBranch,
   onDeleteConversation,
+  isOpen,
+  onToggleSidebar,
 }: SidebarProps) {
   const { state: health } = useHealth();
   const [mounted, setMounted] = useState(false);
@@ -97,16 +101,23 @@ export function Sidebar({
   }, []);
 
   return (
-    <aside className="relative z-10 flex h-full w-[260px] shrink-0 flex-col border-r border-slate-800/60 bg-ink-850/80">
+    <aside className={`relative z-20 flex h-full w-[260px] shrink-0 flex-col border-r border-slate-800/60 bg-ink-850/80 transition-all duration-300 ease-in-out ${isOpen ? 'ml-0 opacity-100' : '-ml-[260px] opacity-0 pointer-events-none'}`}>
       {/* Brand */}
       <div className="flex h-14 items-center gap-3 px-4">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-500/15 border border-brand-500/20">
           <ShieldCheck className="h-4 w-4 text-brand-400" strokeWidth={2} />
         </div>
-        <div className="leading-tight">
-          <h1 className="text-[13px] font-semibold text-slate-100">Enterprise Compliance</h1>
+        <div className="leading-tight flex-1 min-w-0">
+          <h1 className="text-[13px] font-semibold text-slate-100 truncate">Enterprise Compliance</h1>
           <p className="text-[10px] font-mono text-slate-500">AI Assistant</p>
         </div>
+        <button
+          onClick={onToggleSidebar}
+          className="flex shrink-0 items-center justify-center rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-white/5 hover:text-slate-200"
+          aria-label="Close Sidebar"
+        >
+          <Menu className="h-4 w-4" />
+        </button>
       </div>
 
       {/* New Chat */}

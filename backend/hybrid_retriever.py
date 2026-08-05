@@ -4,7 +4,7 @@ from typing import List, Dict, Any, Optional
 from concurrent.futures import ThreadPoolExecutor
 from rank_bm25 import BM25Okapi
 import chromadb
-from backend.data_build.chroma_builder import NomicEmbeddingFunction, get_kb_subpath
+from backend.data_build.chroma_builder import NomicEmbeddingFunction, get_db_subpath
 
 class CrossEncoderReRanker:
     """
@@ -46,8 +46,8 @@ class NomicHybridRetriever:
         nomic_model_name: str = "nomic-ai/nomic-embed-text-v1.5",
         reranker_model_name: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
     ):
-        self.vector_db_dir = vector_db_dir or get_kb_subpath("vector_store")
-        self.processed_dir = processed_dir or get_kb_subpath("processed")
+        self.vector_db_dir = vector_db_dir or get_db_subpath("vector_store")
+        self.processed_dir = processed_dir or get_db_subpath("processed")
         self.collection_name = "nomic_enterprise_child_chunks"
         
         # Load Parent Document Key-Value Store
@@ -145,6 +145,7 @@ class NomicHybridRetriever:
                     "metadata": metadatas[idx],
                     "score": float(1.0 - distances[idx])
                 })
+            print(f"   [Retriever] Vector Search found {len(vector_results)} candidates.")
         return vector_results
 
     def search_bm25(self, query: str, top_k: int = 10, metadata_filter: Optional[Dict[str, Any]] = None, include_superseded: bool = False) -> List[Dict[str, Any]]:
@@ -185,6 +186,7 @@ class NomicHybridRetriever:
             if len(bm25_results) >= top_k:
                 break
 
+        print(f"   [Retriever] BM25 Sparse Search found {len(bm25_results)} candidates.")
         return bm25_results
 
     def reciprocal_rank_fusion(self, vector_results: List[Dict[str, Any]], bm25_results: List[Dict[str, Any]], k: int = 60, top_n: int = 6) -> List[Dict[str, Any]]:
@@ -209,6 +211,7 @@ class NomicHybridRetriever:
             chunk = child_map[cid]
             chunk["rrf_score"] = rrf_scores[cid]
             fused.append(chunk)
+        print(f"   [Retriever] RRF Fusion completed, keeping top {top_n} unified candidates.")
         return fused
 
     def retrieve_parents(self, query: str, metadata_filter: Optional[Dict[str, Any]] = None, top_n_parents: int = 3, include_superseded: bool = False) -> List[Dict[str, Any]]:
@@ -227,12 +230,19 @@ class NomicHybridRetriever:
             vector_res = future_vector.result()
             bm25_res = future_bm25.result()
         
+        print(f"   [Retriever] Parallel Vector/BM25 queries complete.")
         fused_candidates = self.reciprocal_rank_fusion(vector_res, bm25_res, top_n=6)
+        
+        print(f"   [Retriever] Re-ranking fused candidates with Cross-Encoder...")
         reranked_candidates = self.reranker.rerank(query, fused_candidates, top_n=5)
         
         parents = []
         seen_parent_ids = set()
         for child in reranked_candidates:
+            # Using -5.0 as a threshold to prevent dropping valid multi-hop matches that don't have perfect semantic alignment
+            if child.get("cross_encoder_score", 0.0) < -5.0:
+                continue
+                
             pid = child["metadata"].get("parent_id")
             if pid and pid not in seen_parent_ids:
                 seen_parent_ids.add(pid)

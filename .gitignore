@@ -1,28 +1,33 @@
-# Root Gitignore
+# Node.js
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+
+# Python Environment
+__pycache__/
+*/__pycache__/
+venv/
+.venv/
+env/
+ENV/
+
+# Confidential / Environment Variables
 .env
 *.env
 backend/.env
 frontend/.env
+backend/.env.local
+frontend/.env.local
 
-node_modules/
-frontend/node_modules/
-
-dist/
-frontend/dist/
-
-__pycache__/
-*/__pycache__/
-
-venv/
-.venv/
-
-# Vector Store Database & Binary Indices (Do not commit)
-vector_store/
+# Database & Vector Store
+database/vector_store/
+database/processed/
 **/vector_store/
-knowledge_base/vector_store/
-backend/knowledge_base/vector_store/
 *.sqlite3
 *.bin
-
+/Q&A.md
+# System & Logs
 .DS_Store
 *.log
+/trash

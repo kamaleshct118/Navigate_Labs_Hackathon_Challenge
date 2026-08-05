@@ -46,6 +46,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -101,6 +102,14 @@ export default function App() {
     setLoading(false);
     setActiveSessionId(id);
     setError(null);
+  }, []);
+
+  const cancelQuery = useCallback(() => {
+    if (abortRef.current) {
+      abortRef.current.abort();
+      setLoading(false);
+      setError('Request cancelled by user.');
+    }
   }, []);
 
   const deleteConversation = useCallback(
@@ -230,19 +239,23 @@ export default function App() {
         onSelectConversation={selectConversation}
         onSelectBranch={setBranch}
         onDeleteConversation={deleteConversation}
+        isOpen={sidebarOpen}
+        onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
       />
-      <main className="relative z-10 flex min-w-0 flex-1 flex-col">
+      <main className="relative z-10 flex min-w-0 flex-1 flex-col transition-all duration-300 ease-in-out">
         <ChatHeader
           branch={branch}
           onClearMemory={clearMemory}
           clearing={clearing}
           hasMessages={activeMessages.length > 0}
+          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          isSidebarOpen={sidebarOpen}
         />
         <div ref={scrollRef} className="scroll-area min-h-0 flex-1 overflow-y-auto">
           {activeMessages.length === 0 ? (
             <WelcomeScreen onPickPrompt={sendQuery} />
           ) : (
-            <div className="mx-auto max-w-3xl space-y-6 px-5 py-7">
+            <div className="mx-auto max-w-4xl space-y-6 px-5 py-7">
               {activeMessages.map((m) => (
                 <MessageBubble
                   key={m.id}
@@ -257,7 +270,7 @@ export default function App() {
             </div>
           )}
         </div>
-        <InputBar onSend={sendQuery} disabled={loading} branch={branch} />
+        <InputBar onSend={sendQuery} disabled={loading} branch={branch} onCancel={cancelQuery} />
       </main>
     </div>
   );

@@ -6,12 +6,13 @@ import chromadb
 # Determine Project Root Directory
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 
-# Strictly lock Knowledge Base directory to Project Root level
-KB_ROOT_DIR = os.path.join(PROJECT_ROOT, "knowledge_base")
+# Strictly lock Database directory to Project Root level
+DATABASE_DIR = os.path.join(PROJECT_ROOT, "database")
+SAMPLE_DOCS_DIR = os.path.join(PROJECT_ROOT, "sample_docs")
 
-def get_kb_subpath(sub_folder: str) -> str:
-    """Returns absolute path inside root project knowledge_base directory."""
-    full_path = os.path.join(KB_ROOT_DIR, sub_folder)
+def get_db_subpath(sub_folder: str) -> str:
+    """Returns absolute path inside root project database directory."""
+    full_path = os.path.join(DATABASE_DIR, sub_folder)
     os.makedirs(full_path, exist_ok=True)
     return full_path
 
@@ -59,9 +60,9 @@ class ChromaDatabaseBuilder:
         processed_dir: str = None,
         nomic_model_name: str = "nomic-ai/nomic-embed-text-v1.5"
     ):
-        self.sample_docs_dir = sample_docs_dir or get_kb_subpath("sample_docs")
-        self.vector_db_dir = vector_db_dir or get_kb_subpath("vector_store")
-        self.processed_dir = processed_dir or get_kb_subpath("processed")
+        self.sample_docs_dir = sample_docs_dir or SAMPLE_DOCS_DIR
+        self.vector_db_dir = vector_db_dir or get_db_subpath("vector_store")
+        self.processed_dir = processed_dir or get_db_subpath("processed")
         self.nomic_model_name = nomic_model_name
         
         from backend.data_build.loader import MarkdownDocumentLoader
@@ -97,10 +98,10 @@ class ChromaDatabaseBuilder:
 
     def build_chroma_database(self):
         """Processes all Markdown files, reconciles versions, and builds ChromaDB persistent vector index with HNSW."""
-        print("🚀 Starting ChromaDB Vector Indexing with Nomic HuggingFace Embedding Model...")
-        print(f"📁 Source Directory: {self.sample_docs_dir}")
-        print(f"💾 Vector Store Path: {self.vector_db_dir}")
-        print(f"📄 Processed Parent Store Path: {self.processed_dir}")
+        print("[BUILD] Starting ChromaDB Vector Indexing with Nomic HuggingFace Embedding Model...")
+        print(f"[BUILD] Source Directory: {self.sample_docs_dir}")
+        print(f"[BUILD] Vector Store Path: {self.vector_db_dir}")
+        print(f"[BUILD] Processed Parent Store Path: {self.processed_dir}")
         
         if not os.path.exists(self.sample_docs_dir):
             print(f"⚠️ Document directory '{self.sample_docs_dir}' does not exist.")

@@ -22,32 +22,44 @@ class GraphState(TypedDict):
 
 ## 2. Graph Topology & Conditional Decision Engine
 
-```text
-                        ┌──────────────────────────────┐
-                        │        [ START ENTRY ]       │
-                        └──────────────┬───────────────┘
-                                       │
-                                       ▼
-                        ┌──────────────────────────────┐
-                        │         router_node          │
-                        │ (Primary Intelligence Engine)│
-                        └──────────────┬───────────────┘
-                                       │
-                    Evaluates route_next_step(state)
-                                       │
-      ┌────────────────────┬───────────┴───────────┬────────────────────┐
-      │ (intent==CLARIFY)  │ (intent==DIRECT)      │ (intent==MULTI_HOP)│ (intent==ESCALATE)
-      ▼                    ▼                       ▼                    ▼
-┌──────────────┐   ┌──────────────┐        ┌──────────────┐     ┌──────────────┐
-│ clarify_node │   │answer_direct │        │multi_hop_node│     │escalate_node │
-└──────┬───────┘   └──────┬───────┘        └──────┬───────┘     └──────┬───────┘
-       │                  │                       │                    │
-       └──────────────────┴───────────┬───────────┴────────────────────┘
-                                      │
-                                      ▼
-                        ┌──────────────────────────────┐
-                        │           [ END ]            │
-                        └──────────────────────────────┘
+```mermaid
+graph TD
+    %% Define Styles
+    classDef startNode fill:#2c3e50,stroke:#34495e,stroke-width:2px,color:white;
+    classDef routerNode fill:#8e44ad,stroke:#9b59b6,stroke-width:2px,color:white;
+    classDef llmNode fill:#2980b9,stroke:#3498db,stroke-width:2px,color:white;
+    classDef guardNode fill:#e74c3c,stroke:#c0392b,stroke-width:2px,color:white;
+    classDef state fill:#f1c40f,stroke:#f39c12,stroke-width:2px,color:black,stroke-dasharray: 5 5;
+
+    %% Nodes
+    USER(["User Query"]) ::: startNode
+    STATE[("(GraphState)")] ::: state
+    ROUTER{"Router Node<br/>(Intent & Retrieval)"} ::: routerNode
+    
+    CLARIFY["Clarify Node<br/>(Request Location)"] ::: guardNode
+    ESCALATE["Escalate Node<br/>(Human Protocol)"] ::: guardNode
+    
+    MULTI_HOP["Multi-Hop Node<br/>(Gemini 3.6 Synthesis)"] ::: llmNode
+    DIRECT["Answer Direct Node<br/>(Gemini 3.6 Synthesis)"] ::: llmNode
+    
+    OUTPUT(["Final Formatted Answer"]) ::: startNode
+
+    %% Flow
+    USER --> STATE
+    STATE --> ROUTER
+    
+    ROUTER -->|"Intent: CLARIFY or<br/>Contradiction Detected"| CLARIFY
+    ROUTER -->|"Intent: ESCALATE"| ESCALATE
+    ROUTER -->|"Intent: MULTI_HOP"| MULTI_HOP
+    ROUTER -->|"Intent: ANSWER_DIRECT"| DIRECT
+    
+    %% Fallback loop in code
+    MULTI_HOP -.->|"If No Cross-Docs Found"| DIRECT
+    
+    CLARIFY --> OUTPUT
+    ESCALATE --> OUTPUT
+    MULTI_HOP --> OUTPUT
+    DIRECT --> OUTPUT
 ```
 
 ---

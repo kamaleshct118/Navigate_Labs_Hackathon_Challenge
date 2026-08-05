@@ -1,16 +1,27 @@
-import { Trash2, RotateCcw, Brain } from 'lucide-react';
+import { Trash2, RotateCcw, Brain, Menu } from 'lucide-react';
 
 interface ChatHeaderProps {
   branch: string;
   onClearMemory: () => void;
   clearing: boolean;
   hasMessages: boolean;
+  onToggleSidebar: () => void;
+  isSidebarOpen: boolean;
 }
 
-export function ChatHeader({ branch, onClearMemory, clearing, hasMessages }: ChatHeaderProps) {
+export function ChatHeader({ branch, onClearMemory, clearing, hasMessages, onToggleSidebar, isSidebarOpen }: ChatHeaderProps) {
   return (
     <div className="flex h-14 items-center justify-between border-b border-slate-800/60 px-5">
       <div className="flex items-center gap-2.5">
+        {!isSidebarOpen && (
+          <button
+            onClick={onToggleSidebar}
+            className="mr-1 flex items-center justify-center rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-white/5 hover:text-slate-200"
+            aria-label="Toggle Sidebar"
+          >
+            <Menu className="h-4 w-4" />
+          </button>
+        )}
         <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-500/15">
           <Brain className="h-4 w-4 text-brand-400" />
         </div>

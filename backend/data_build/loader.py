@@ -3,7 +3,7 @@ import re
 from typing import List, Dict, Any, Tuple
 
 class MarkdownDocumentLoader:
-    def __init__(self, sample_docs_dir: str = "knowledge_base/sample_docs"):
+    def __init__(self, sample_docs_dir: str = "sample_docs"):
         self.sample_docs_dir = sample_docs_dir
 
     def parse_metadata_header(self, text: str, file_name: str) -> Tuple[Dict[str, Any], str]:

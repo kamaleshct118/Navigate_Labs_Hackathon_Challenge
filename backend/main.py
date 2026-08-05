@@ -12,7 +12,7 @@ if PROJECT_ROOT not in sys.path:
 from backend.graph.agent_graph import run_compliance_agent
 from backend.graph.session_cache import session_cache
 
-from backend.graph.nodes import get_retriever, call_groq_llm, call_gemini_llm
+from backend.graph.nodes import get_retriever, call_nvidia_llm
 
 app = FastAPI(
     title="Enterprise Compliance Agentic RAG API",
@@ -30,36 +30,37 @@ app.add_middleware(
 )
 
 
+import concurrent.futures
+
 @app.on_event("startup")
 def preload_models_and_verify_keys():
     """
-    Startup Hook: Pre-loads all ML models (Nomic Embed, BM25, Cross-Encoder) and verifies API keys
-    so the server is 100% warmed up and instant for first user request.
+    Startup Hook: Concurrently pre-loads all ML models (Nomic Embed, BM25, Cross-Encoder) 
+    and verifies API keys so the server is 100% warmed up and instant for first user request.
     """
     print("============================================================")
-    print(" [STARTUP] Warming up Compliance Retriever Models & LLM Keys...")
+    print(" [STARTUP] Warming up Compliance Retriever Models & LLM Keys concurrently...")
     
-    # 1. Warm up Retriever Models
-    try:
-        retriever = get_retriever()
-        _ = retriever.reranker
-        print(" [STARTUP] Nomic Embeddings & Cross-Encoder Re-Ranker Warmed Up!")
-    except Exception as e:
-        print(f" [STARTUP WARNING] Model preloader note: {e}")
+    def init_retriever():
+        try:
+            retriever = get_retriever()
+            _ = retriever.reranker
+            print(" [STARTUP] Nomic Embeddings & Cross-Encoder Re-Ranker Warmed Up!")
+        except Exception as e:
+            print(f" [STARTUP WARNING] Model preloader note: {e}")
 
-    # 2. Test Groq Outer LLM Key
-    groq_res = call_groq_llm("Respond with READY", "System test")
-    if groq_res:
-        print(" [STARTUP] Groq (llama-3.3-70b-versatile) API Key Verified & Connected!")
-    else:
-        print(" [STARTUP WARNING] Groq API Key unconfigured or unreachable.")
+    def init_nvidia():
+        nvidia_res = call_nvidia_llm("Respond with exactly the word READY", "Are you online?")
+        if nvidia_res:
+            print(" [STARTUP] NVIDIA (Nemotron) API Key Verified & Connected!")
+        else:
+            print(" [STARTUP WARNING] NVIDIA API Key unconfigured or unreachable.")
 
-    # 3. Test Gemini Agentic LLM Key
-    gemini_res = call_gemini_llm("Respond with READY", "System test")
-    if gemini_res:
-        print(" [STARTUP] Gemini (gemini-3.6-flash) API Key Verified & Connected!")
-    else:
-        print(" [STARTUP WARNING] Gemini API Key unconfigured or unreachable.")
+    # Run initializations in parallel threads to ensure zero-lag first request
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        future_retriever = executor.submit(init_retriever)
+        future_nvidia = executor.submit(init_nvidia)
+        concurrent.futures.wait([future_retriever, future_nvidia])
         
     print(" [STARTUP] All System Models & Services Ready!")
     print("============================================================")
