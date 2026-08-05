@@ -1,0 +1,28 @@
+# Root Gitignore
+.env
+*.env
+backend/.env
+frontend/.env
+
+node_modules/
+frontend/node_modules/
+
+dist/
+frontend/dist/
+
+__pycache__/
+*/__pycache__/
+
+venv/
+.venv/
+
+# Vector Store Database & Binary Indices (Do not commit)
+vector_store/
+**/vector_store/
+knowledge_base/vector_store/
+backend/knowledge_base/vector_store/
+*.sqlite3
+*.bin
+
+.DS_Store
+*.log

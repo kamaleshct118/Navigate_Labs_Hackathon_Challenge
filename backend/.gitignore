@@ -1,0 +1,21 @@
+# Backend Gitignore
+.env
+.env.local
+*.env
+__pycache__/
+*/__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+venv/
+.venv/
+env/
+ENV/
+
+# Vector Store Database & Binary Indices
+vector_store/
+**/vector_store/
+knowledge_base/vector_store/
+*.sqlite3
+*.bin
+*.log
