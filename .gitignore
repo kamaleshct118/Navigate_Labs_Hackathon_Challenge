@@ -31,3 +31,4 @@ database/processed/
 .DS_Store
 *.log
 /trash
+/ENTERPRISE_ARCHITECTURE.md
